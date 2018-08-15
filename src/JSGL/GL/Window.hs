@@ -13,9 +13,7 @@ initWindow info initialzer = do
       windowTitle = title info
       windowResizable = resizable info
       
-  print "po"
   initialzer
-  GLFW.init
   GLFW.windowHint $ GLFW.WindowHint'ContextVersionMajor 3
   GLFW.windowHint $ GLFW.WindowHint'ContextVersionMinor 3
   GLFW.windowHint $ GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core

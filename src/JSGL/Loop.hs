@@ -6,6 +6,7 @@ import JSGL.GL.Window (initWindow)
 import JSGL.Utils.Debug
 import JSGL.Types.Type 
 import Control.Monad (when)
+import Control.Exception (bracket)
 import qualified Graphics.UI.GLFW as GLFW
 import Graphics.GL.Core33
 import Graphics.GL.Types
@@ -22,8 +23,12 @@ callback window key scanCode keyState modKeys = do
   when (key == GLFW.Key'Escape && keyState == GLFW.KeyState'Pressed)
     (GLFW.setWindowShouldClose window True)
 
+glfwBracket :: IO () -> IO ()
+glfwBracket action = bracket GLFW.init (const GLFW.terminate) $ \initialized ->
+  when initialized action
+
 execute :: IO ()
-execute = do
+execute = glfwBracket $ do
   maybeWindow <- initWindow wi $ return undefined
   case maybeWindow of
     Nothing -> coloredLog Red $ print "Failed to create a GLFW window!"
@@ -39,6 +44,5 @@ execute = do
               glClearColor 1.0 1.0 1.0 1.0
               glClear GL_COLOR_BUFFER_BIT
               GLFW.swapBuffers window
-            loop
+              loop
       loop
-  GLFW.terminate
