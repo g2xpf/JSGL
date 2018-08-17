@@ -31,6 +31,8 @@ library:
     - gl >=0.8.0
     - raw-strings-qq
     - ansi-terminal
+    - transformers
+    - split
 
 executables:
   JSGL-exe:

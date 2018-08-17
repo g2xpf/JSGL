@@ -11,11 +11,24 @@ import qualified Graphics.UI.GLFW as GLFW
 import Graphics.GL.Core33
 import Graphics.GL.Types
 
+import JSGL.GL.VAO
+import JSGL.GL.VBO
+import JSGL.GL.Shader
+
+
 wi = windowInfo {
   size = (1920, 1080),
   title = "Window",
   resizable = False
 }
+
+loop :: GLFW.Window -> IO () -> IO ()
+loop window action = do
+  shouldContinue <- GLFW.windowShouldClose window
+  when (not shouldContinue) $ do
+    action
+    loop window action
+    
 
 callback :: GLFW.KeyCallback
 callback window key scanCode keyState modKeys = do
@@ -29,20 +42,29 @@ glfwBracket action = bracket GLFW.init (const GLFW.terminate) $ \initialized ->
 
 execute :: IO ()
 execute = glfwBracket $ do
-  maybeWindow <- initWindow wi $ return undefined
-  case maybeWindow of
-    Nothing -> coloredLog Red $ print "Failed to create a GLFW window!"
-    Just window -> do
-      GLFW.setKeyCallback window (Just callback)
-      GLFW.makeContextCurrent (Just window)
-      (x, y) <- GLFW.getFramebufferSize window
-      glViewport 0 0 (fromIntegral x) (fromIntegral y)
-      let loop = do
-            shouldContinue <- GLFW.windowShouldClose window
-            when (not shouldContinue) $ do
-              GLFW.pollEvents
-              glClearColor 1.0 1.0 1.0 1.0
-              glClear GL_COLOR_BUFFER_BIT
-              GLFW.swapBuffers window
-              loop
-      loop
+  window <- initWindow wi $ return ()
+  GLFW.setKeyCallback window (Just callback)
+  GLFW.makeContextCurrent (Just window)
+  (x, y) <- GLFW.getFramebufferSize window
+  glViewport 0 0 (fromIntegral x) (fromIntegral y)
+
+  vert <- createShader GL_VERTEX_SHADER "src/JSGL/Shader/Main.vert"
+  frag <- createShader GL_FRAGMENT_SHADER "src/JSGL/Shader/Main.frag"
+  program <- linkProgram vert frag
+
+  vao <- createVAO $ do
+    createVBO [0.5, 0.5, 0.0,
+               0.5, -0.5, 0.0,
+               -0.5, 0.5, 0.0,
+               0.5, -0.5, 0.0,
+               -0.5, -0.5, 0.0,
+               -0.5, 0.5, 0.0]
+    bindAttribute 0 3
+  loop window $ do
+    glClearColor 1.0 1.0 1.0 1.0
+    glClear GL_COLOR_BUFFER_BIT
+    glUseProgram program
+    glBindVertexArray vao
+    glDrawArrays GL_TRIANGLES 0 6
+    GLFW.swapBuffers window
+    GLFW.pollEvents

@@ -1,10 +1,12 @@
 module JSGL.Utils.File (
-  fetch 
+  fetch,
+  basename,
 ) where
 
 import JSGL.Utils.Debug
 import Control.Exception
 import System.Exit
+import Data.List.Split
 
 fetch :: String -> IO String
 fetch filename = do
@@ -15,4 +17,5 @@ fetch filename = do
       coloredLog Red $ print err
       exitFailure
 
-
+basename :: String -> String
+basename = last . splitOn "/"
