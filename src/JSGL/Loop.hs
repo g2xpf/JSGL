@@ -5,11 +5,12 @@ module JSGL.Loop (
 import JSGL.GL.Window (initWindow)
 import JSGL.Utils.Debug
 import JSGL.Types.Type 
-import Control.Monad (when)
+import Control.Monad (when, join)
 import Control.Exception (bracket)
 import qualified Graphics.UI.GLFW as GLFW
 import Graphics.GL.Core33
 import Graphics.GL.Types
+import Foreign.Ptr
 
 import JSGL.GL.VAO
 import JSGL.GL.VBO
@@ -53,18 +54,19 @@ execute = glfwBracket $ do
   program <- linkProgram vert frag
 
   vao <- createVAO $ do
-    createVBO [0.5, 0.5, 0.0,
-               0.5, -0.5, 0.0,
-               -0.5, 0.5, 0.0,
-               0.5, -0.5, 0.0,
-               -0.5, -0.5, 0.0,
-               -0.5, 0.5, 0.0]
-    bindAttribute 0 3
+    let theta = 2.0 * pi / 6.0;
+    createVBO $ join [[cos (theta * i), sin (theta * i)] | i <- [1..6]]
+    createEBO [0, 1, 2,
+               2, 0, 5,
+               5, 2, 4,
+               2, 4, 3]
+    bindAttribute 0 2
+
   loop window $ do
     glClearColor 1.0 1.0 1.0 1.0
     glClear GL_COLOR_BUFFER_BIT
     glUseProgram program
     glBindVertexArray vao
-    glDrawArrays GL_TRIANGLES 0 6
+    glDrawElements GL_TRIANGLES 12 GL_UNSIGNED_INT nullPtr
     GLFW.swapBuffers window
     GLFW.pollEvents
