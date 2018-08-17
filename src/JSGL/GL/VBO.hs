@@ -31,7 +31,7 @@ createVBO position = do
 createEBO :: Element -> BufferObjectBuilder
 createEBO element = do
   bos <- get
-  let size = fromIntegral $ sizeOf (0.0 :: GLfloat) * (length element)
+  let size = fromIntegral $ sizeOf (0 :: GLuint) * (length element)
   ebo <- lift $ do
     elementP <- newArray element
     eboP <- malloc
