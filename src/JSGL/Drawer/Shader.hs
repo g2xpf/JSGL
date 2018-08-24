@@ -1,4 +1,4 @@
-module JSGL.GL.Shader (
+module JSGL.Drawer.Shader (
   createShader,
   linkProgram
 )where

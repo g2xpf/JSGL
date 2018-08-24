@@ -1,4 +1,4 @@
-module JSGL.GL.Window (
+module JSGL.Drawer.Window (
   initWindow,
 ) where
 

@@ -33,6 +33,7 @@ library:
     - ansi-terminal
     - transformers
     - split
+    - random
 
 executables:
   JSGL-exe:

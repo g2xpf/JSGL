@@ -2,20 +2,21 @@ module JSGL.Loop (
   execute 
 ) where
 
-import JSGL.GL.Window (initWindow)
+import JSGL.Drawer.Window (initWindow)
 import JSGL.Utils.Debug
 import JSGL.Types.Type 
 import Control.Monad (when, join)
+import Control.Monad.Trans.Class
 import Control.Exception (bracket)
 import qualified Graphics.UI.GLFW as GLFW
 import Graphics.GL.Core33
 import Graphics.GL.Types
 import Foreign.Ptr
+import System.Random
 
-import JSGL.GL.VAO
-import JSGL.GL.VBO
-import JSGL.GL.Shader
-
+import JSGL.Drawer.VBO
+import JSGL.Drawer.Shader
+import JSGL.Drawer.Shapes
 
 wi = windowInfo {
   size = (1920, 1080),
@@ -53,20 +54,30 @@ execute = glfwBracket $ do
   frag <- createShader GL_FRAGMENT_SHADER "src/JSGL/Shader/Main.frag"
   program <- linkProgram vert frag
 
-  vao <- createVAO $ do
-    let theta = 2.0 * pi / 6.0;
-    createVBO $ join [[cos (theta * i), sin (theta * i)] | i <- [1..6]]
-    createEBO [0, 1, 2,
-               2, 0, 5,
-               5, 2, 4,
-               2, 4, 3]
-    bindAttribute 0 2
+  gen <- getStdGen
+  let points = 6 
+      pointsFloat = fromIntegral points
+  shapeInfo <- createVAO points $ do
+    createVBO attribInfo { 
+      attribPointer = 0,
+      dimension = 2,
+      array = join [[cos (2.0*pi/pointsFloat*i), sin (2.0*pi/pointsFloat*i)] | i <- fromIntegral <$> [0..points-1]]
+    }
+    lift . note $ join [[cos (2.0*pi/pointsFloat*i), sin (2.0*pi/pointsFloat*i)] | i <- fromIntegral <$> [0..points-1]]
+    createVBO attribInfo {
+      attribPointer = 1,
+      dimension = 3,
+      array = take (points * 3) $ randomRs (0.0, 1.0) gen :: [GLfloat]
+    }
+    createIBO [ 0, 1, 2, 
+                2, 0, 3,
+                3, 0, 5,
+                5, 3, 4]
 
   loop window $ do
     glClearColor 1.0 1.0 1.0 1.0
     glClear GL_COLOR_BUFFER_BIT
     glUseProgram program
-    glBindVertexArray vao
-    glDrawElements GL_TRIANGLES 12 GL_UNSIGNED_INT nullPtr
+    draw shapeInfo GL_TRIANGLES
     GLFW.swapBuffers window
     GLFW.pollEvents
