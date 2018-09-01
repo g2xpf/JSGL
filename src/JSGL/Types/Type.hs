@@ -30,6 +30,7 @@ module JSGL.Types.Type (
 -- shape info
   ShapeInfo(..),
   Drawable(..),
+  ShapeObject(..),
 ) where 
 
 import JSGL.Utils.Debug
@@ -42,21 +43,17 @@ import Control.Monad.Trans.State
 data WindowInfo = WindowInfo {
   size :: (Int, Int),
   title :: String,
-  resizable :: Bool
+  resizable :: Bool,
+  fullscreen :: Bool
 }
 
 windowInfo :: WindowInfo
 windowInfo = WindowInfo {
   size = (800, 600),
   title = "Window",
-  resizable = False
+  resizable = False,
+  fullscreen = False
 }
-
-data BufferObjectInfo = BufferObjectInfo {
-  vbo :: (Maybe AttribPointer, [GLfloat]),
-  ibo :: IBO,
-  program :: Program
-} deriving Show
 
 data AttribInfo = AttribInfo {
   attribPointer :: AttribPointer,
@@ -80,6 +77,11 @@ instance Drawable ShapeInfo where
     if hasIndex info
     then glDrawElements drawType points' GL_UNSIGNED_INT nullPtr
     else glDrawArrays drawType 0 points'
+
+instance Drawable ShapeObject where
+  draw obj drawType = do
+    glUseProgram $ program obj
+    draw (shapeInfo obj) drawType
     
 data ShapeInfo = ShapeInfo {
   hasIndex :: Bool,
@@ -87,6 +89,13 @@ data ShapeInfo = ShapeInfo {
   points :: Int
 }
 
+data ShapeObject = ShapeObject {
+  program :: Program,
+  position :: Position,
+  shapeInfo :: ShapeInfo
+}
+
+type Position = [GLfloat]
 type DrawType = GLenum
 type Indices = [GLuint]
 type BufferType = GLenum

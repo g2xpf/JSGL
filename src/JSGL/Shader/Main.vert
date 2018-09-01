@@ -5,6 +5,7 @@ out vec4 vColor;
 
 void main(){
     vColor = vec4(color, 1.0);
-    gl_Position = vec4(position * 0.8, 0.0, 1.0);
+    mat4 model = mat4(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0.1, 0., 0., 1.);
+    gl_Position = model * vec4(position * 0.8, 0.0, 1.0);
 }
 

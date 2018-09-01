@@ -27,6 +27,7 @@ library:
   exposed-modules:
     - JSGL.Loop  
   dependencies: 
+    - mtl
     - GLFW-b
     - gl >=0.8.0
     - raw-strings-qq
@@ -34,6 +35,7 @@ library:
     - transformers
     - split
     - random
+    - linear
 
 executables:
   JSGL-exe:

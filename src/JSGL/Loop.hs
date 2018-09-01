@@ -2,6 +2,7 @@ module JSGL.Loop (
   execute 
 ) where
 
+import Control.Concurrent
 import JSGL.Drawer.Window (initWindow)
 import JSGL.Utils.Debug
 import JSGL.Types.Type 
@@ -19,9 +20,10 @@ import JSGL.Drawer.Shader
 import JSGL.Drawer.Shapes
 
 wi = windowInfo {
-  size = (1920, 1080),
+  size = (3840, 2160),
   title = "Window",
-  resizable = False
+  resizable = False,
+  fullscreen = False
 }
 
 loop :: GLFW.Window -> IO () -> IO ()
@@ -63,13 +65,12 @@ execute = glfwBracket $ do
       dimension = 2,
       array = join [[cos (2.0*pi/pointsFloat*i), sin (2.0*pi/pointsFloat*i)] | i <- fromIntegral <$> [0..points-1]]
     }
-    lift . note $ join [[cos (2.0*pi/pointsFloat*i), sin (2.0*pi/pointsFloat*i)] | i <- fromIntegral <$> [0..points-1]]
     createVBO attribInfo {
       attribPointer = 1,
       dimension = 3,
       array = take (points * 3) $ randomRs (0.0, 1.0) gen :: [GLfloat]
     }
-    createIBO [ 0, 1, 2, 
+    createIBO [ 0, 1, 2,
                 2, 0, 3,
                 3, 0, 5,
                 5, 3, 4]
