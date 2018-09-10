@@ -1,15 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 
 module JSGL.Utils.Debug (
-  coloredLog,
-  errorLog,
-  assert,
+  -- logging utilities
   note,
-  Color(..),
+  warn,
+  err,
   glErr,
+
+  -- log and exit
+  assert,
 ) where
 
-import Graphics.GL.Core33
+import Graphics.GL.Core33 (glGetError)
 import System.Console.ANSI
 import System.Exit
 
@@ -19,19 +21,23 @@ coloredLog color log = do
   log
   setSGR [Reset]
 
-errorLog :: String -> IO ()
-errorLog log = coloredLog Red $ putStrLn log
+err :: Show a => a -> IO ()
+err log = coloredLog Red $ print log
 
-assert :: Bool -> String -> IO ()
-assert ok str = if ok 
-              then return () 
-              else do
-                  errorLog str
+assert :: Show a => Bool -> a -> IO ()
+assert ok s = if ok 
+                then return () 
+                else do
+                  err s 
                   exitFailure
+
+warn :: Show a => Bool -> a -> IO ()
+warn ok s = if ok
+              then return ()
+              else coloredLog Yellow $ print s
 
 note :: Show a => a -> IO ()
 note s = coloredLog Cyan $ print s
 
 glErr :: IO ()
-glErr = do
-  glGetError >>= errorLog . show
+glErr = glGetError >>= err . show
