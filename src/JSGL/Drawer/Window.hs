@@ -26,7 +26,7 @@ initWindow info initialzer = do
   case maybeWindow of
     Just window -> return window
     Nothing -> do
-      coloredLog Red $ print "Failed to create a GLFW window!"
+      err $ "Failed to create a GLFW window!"
       exitFailure
 
 branch :: Bool -> Maybe a -> Maybe a

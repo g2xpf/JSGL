@@ -29,7 +29,7 @@ createShader shaderType shaderPath = do
   glGetShaderiv shader GL_COMPILE_STATUS successP
   success <- peek successP
   when (success == GL_FALSE) $ do
-    coloredLog Red $ print $ "Compile error in " ++ basename shaderPath ++ ":"
+    err $ "Compile error in " ++ basename shaderPath ++ ":"
     let infoLength = 512
     resultP <- malloc
     infoLog <- mallocArray $ fromIntegral infoLength
@@ -50,7 +50,7 @@ linkProgram vs fs = do
   glGetProgramiv program GL_LINK_STATUS successP
   success <- peek successP
   when (success == GL_FALSE) $ do
-    coloredLog Red $ print $ "Link error"
+    err $ "Link error"
     let infoLength = 512
     resultP <- malloc
     infoLog <- mallocArray $ fromIntegral infoLength

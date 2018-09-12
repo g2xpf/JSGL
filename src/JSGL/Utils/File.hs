@@ -13,8 +13,8 @@ fetch filename = do
   mayErr <- try $ readFile filename :: IO (Either IOError String)
   case mayErr of
     Right contents -> return contents
-    Left err -> do
-      coloredLog Red $ print err
+    Left error -> do
+      err error
       exitFailure
 
 basename :: String -> String
