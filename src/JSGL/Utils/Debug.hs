@@ -25,16 +25,14 @@ err :: Show a => a -> IO ()
 err log = coloredLog Red $ print log
 
 assert :: Show a => Bool -> a -> IO ()
-assert ok s = if ok 
-                then return () 
+assert ok s = if ok
+                then return ()
                 else do
-                  err s 
+                  err s
                   exitFailure
 
-warn :: Show a => Bool -> a -> IO ()
-warn ok s = if ok
-              then return ()
-              else coloredLog Yellow $ print s
+warn :: Show a => a -> IO ()
+warn s = coloredLog Yellow $ print s
 
 note :: Show a => a -> IO ()
 note s = coloredLog Cyan $ print s
