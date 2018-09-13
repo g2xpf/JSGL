@@ -4,12 +4,20 @@
 module JSGL.Types.GS (
   GS,
   runGS,
-  sync
+  runGS_,
+  sync,
+  lift,
+  liftIO,
+  put,
+  get,
+  modify,
+  modify',
+  when
 ) where
 
 import Control.Concurrent.MVar (newEmptyMVar, takeMVar, putMVar, MVar)
 import Control.Concurrent (forkIO, threadDelay)
-import Control.Monad (forever)
+import Control.Monad (forever, when)
 import Control.Monad.IO.Class (MonadIO(..))
 import Control.Monad.State (runStateT, StateT)
 import Control.Monad.Trans.Class
@@ -17,8 +25,10 @@ import Control.Monad.State (MonadState(..))
 import Control.Monad.State.Class
 import Control.Monad.Reader (MonadReader(..))
 import Control.Applicative
+import JSGL.Utils.Debug (warn, assert)
 
 newtype CState s r m a = CState { runCState :: (r, s) -> m (a, s) }
+type FPS = Int
 
 instance (Functor m) => Functor (CState s r m) where
   fmap f m = CState $ \(r, s) -> 
@@ -67,11 +77,17 @@ data Synchronizer = Synchronizer {
   stopper :: MVar () 
 }
 
-runGS :: GS s a -> Int -> s -> IO (a, s)
-runGS gs interval initState = do
+runGS :: GS s a -> (FPS, s) -> IO (a, s)
+runGS gs (fps, initState) = do
+  let interval = 1000000 `div` fps
   synchronizer <- getSynchronizer
   measureOn interval synchronizer
   runCState gs (synchronizer, initState)
+
+runGS_ :: GS s a -> (FPS, s) -> IO ()
+runGS_ gs init = do
+  runGS gs init
+  return ()
 
 sync :: GS s ()
 sync = do
