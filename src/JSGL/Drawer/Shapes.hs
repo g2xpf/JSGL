@@ -31,7 +31,7 @@ createVAO cnt vboBuilder = do
       return ShapeInfo {
         hasIndex = True,
         vao = vao,
-        points = points * (length indices `div` 3)
+        points = length indices
       }
     Nothing -> return ShapeInfo {
       hasIndex = False,
@@ -47,9 +47,9 @@ bindVBO cnt attribInfoArray = do
   bufferDataArray' <- composeBufferData dims bufferDataArray
   assert (length bufferDataArray' == cnt) "The nunmber of vertices doesn't match"
 
-  let size = fromIntegral $ sizeOf (0.0 :: GLfloat) * (length . join $ bufferDataArray')
+  let size = fromIntegral $ sizeOf (0.0 :: GLfloat) * (length . concat $ bufferDataArray')
       points = length bufferDataArray'
-  bufferDataArrayP <- newArray $ join bufferDataArray'
+  bufferDataArrayP <- newArray $ concat bufferDataArray'
   vboP <- malloc
   glGenBuffers 1 vboP
   vbo <- peek vboP
@@ -71,7 +71,7 @@ bindIBO :: PointCount -> Indices -> IO ()
 bindIBO cnt indices = do
   let size = fromIntegral $ sizeOf (0 :: GLuint) * (length indices)
   indicesP <- newArray indices 
-  assert (filter (\val -> (fromIntegral val) >= cnt) indices == []) "The number of vertices doesn't match"
+  assert (filter (\val -> (fromIntegral val) >= cnt) indices == []) "The index might be bigger than the number of points"
   iboP <- malloc
   glGenBuffers 1 iboP
   ibo <- peek iboP
@@ -84,7 +84,7 @@ composeBufferData dims buffs = do
   let lengthArray = map length buffs'
   assert (allEq lengthArray) $ "The number of points isn't consistent: " ++ show lengthArray
   assert (not . elem 0 $ lengthArray) $ "The array contains empty array"
-  return . map join . transpose $ buffs'
+  return . reverse . map concat . transpose $ buffs'
 
 allEq :: Eq a => [a] -> Bool
 allEq [] = True
