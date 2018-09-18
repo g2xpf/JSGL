@@ -1,111 +1,54 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module JSGL.Types.GS (
   GS,
-  runGS,
-  runGS_,
-  sync,
+  runGS, runGS_,
+  -- monad reader
+  reader, local, ask,
+  -- monad state
+  get, gets, put, modify, modify',
+  -- monad trans
   lift,
-  liftIO,
-  put,
-  get,
-  modify,
-  modify',
-  when
+  -- monad io
+  liftIO
 ) where
 
-import Control.Concurrent.MVar (newEmptyMVar, takeMVar, putMVar, MVar)
 import Control.Concurrent (forkIO, threadDelay)
-import Control.Monad (forever, when)
-import Control.Monad.IO.Class (MonadIO(..))
-import Control.Monad.State (runStateT, StateT)
-import Control.Monad.Trans.Class
-import Control.Monad.State (MonadState(..))
-import Control.Monad.State.Class
-import Control.Monad.Reader (MonadReader(..))
-import Control.Applicative
 import JSGL.Utils.Debug (warn, assert)
+import JSGL.Drawer.Window (initWindow, WindowInfo(..))
+import JSGL.Types.CState
+import Control.Exception (bracket)
 
-newtype CState s r m a = CState { runCState :: (r, s) -> m (a, s) }
-type FPS = Int
+import qualified Graphics.UI.GLFW as GLFW
+import Graphics.GL.Core33
+import Graphics.GL.Types
 
-instance (Functor m) => Functor (CState s r m) where
-  fmap f m = CState $ \(r, s) -> 
-    fmap (\ ~(a, s') -> (f a, s')) $ runCState m (r, s)
+type GS s a = CState s GLFW.Window IO a
+runGS :: GS s a -> (WindowInfo, s) -> IO (a, s)
+runGS gs (windowInfo, initState) = do
+  let interval = 1000000 `div` fps windowInfo
 
-instance (Functor m, Monad m) => Applicative (CState s r m) where
-  pure m = CState $ \(r, s) -> return (m, s)
-  f <*> m = do
-    f' <- f
-    CState $ \(r, s) -> do
-      (a, s') <- runCState m (r, s)
-      return (f' a, s')
+  glfwBracket $ do
+    window <- initWindow windowInfo
+    GLFW.setKeyCallback window (Just callback)
+    GLFW.makeContextCurrent (Just window)
+    (x, y) <- GLFW.getFramebufferSize window
+    glViewport 0 0 (fromIntegral x) (fromIntegral y)
+    runCState gs (window, initState)
 
-instance (Monad m) => Monad (CState s r m) where
-  return a = CState $ \(r, s) -> return (a, s)
-  {-# INLINE return #-}
-
-  m >>= f = CState $ \(r, s) -> do
-              (a, s') <- runCState m (r, s)
-              runCState (f a) (r, s')
-  {-# INLINE (>>=) #-}
-
-  fail str = CState $ \_ -> fail str
-  {-# INLINE fail #-}
-
-instance Monad m => MonadState s (CState s r m) where
-  get = CState $ \(r, s) -> return (s, s)
-  put s = CState $ \_ -> return ((), s)
-
-instance Monad m => MonadReader r (CState s r m) where
-  reader f = CState $ \(r, s) -> return (f r, s)
-  local f m = CState $ \(r, s) -> runCState m (f r, s)
-
-instance MonadTrans (CState s r) where
-  lift m = CState $ \(r, s) -> do
-    val <- m
-    return (val, s)
-
-instance MonadIO m => MonadIO (CState s r m) where
-  liftIO =  lift . liftIO
-
-type GS s a = CState s Synchronizer IO a
-
-data Synchronizer = Synchronizer {
-  starter :: MVar (),
-  stopper :: MVar () 
-}
-
-runGS :: GS s a -> (FPS, s) -> IO (a, s)
-runGS gs (fps, initState) = do
-  let interval = 1000000 `div` fps
-  synchronizer <- getSynchronizer
-  measureOn interval synchronizer
-  runCState gs (synchronizer, initState)
-
-runGS_ :: GS s a -> (FPS, s) -> IO ()
+runGS_ :: GS s a -> (WindowInfo, s) -> IO ()
 runGS_ gs init = do
   runGS gs init
   return ()
 
-sync :: GS s ()
-sync = do
-  Synchronizer sync1 sync2 <- ask
-  liftIO $ do
-    putMVar sync2 ()
-    takeMVar sync1
+glfwBracket :: IO a -> IO a
+glfwBracket action = do
+  bracket GLFW.init (const GLFW.terminate) $ \initialized ->
+    if initialized
+      then action
+      else return undefined
 
-getSynchronizer :: IO Synchronizer
-getSynchronizer = do
-  sync1 <- newEmptyMVar
-  sync2 <- newEmptyMVar
-  return $ Synchronizer sync1 sync2
-  
-measureOn :: Int -> Synchronizer -> IO ()
-measureOn interval (Synchronizer sync1 sync2) = do
-  forkIO . forever $ do
-    threadDelay interval
-    putMVar sync1 ()
-    takeMVar sync2
-  return ()
+callback :: GLFW.KeyCallback
+callback window key scanCode keyState modKeys = do
+  print key
+  when (key == GLFW.Key'Escape && keyState == GLFW.KeyState'Pressed)
+    (GLFW.setWindowShouldClose window True)
+
