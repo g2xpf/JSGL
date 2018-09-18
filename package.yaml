@@ -36,6 +36,7 @@ library:
     - split
     - random
     - linear
+    - lens
 
 executables:
   JSGL-exe:

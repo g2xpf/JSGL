@@ -1,11 +1,14 @@
 #version 330 core
-layout (location = 0) in vec2 position;
-layout (location = 1) in vec3 color;
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 normal;
+
+uniform mat4 transform;
+out vec3 vNormal;
 out vec4 vColor;
 
 void main(){
-    vColor = vec4(color, 1.0);
-    mat4 model = mat4(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0.1, 0., 0., 1.);
-    gl_Position = model * vec4(position * 0.8, 0.0, 1.0);
+    vNormal = normal;
+    vColor = vec4(0.5*position+0.5, 1.0);
+    gl_Position = transform * vec4(position, 1.0);
 }
 

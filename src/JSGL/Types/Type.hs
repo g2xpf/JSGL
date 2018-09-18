@@ -1,7 +1,4 @@
 module JSGL.Types.Type (
--- window info constructor
-  WindowInfo(..),
-  windowInfo,
 -- shader source data tyeps
   ShaderType,
   ShaderObject,
@@ -29,31 +26,18 @@ module JSGL.Types.Type (
   DrawType,
 -- shape info
   ShapeInfo(..),
-  Drawable(..),
   ShapeObject(..),
+  MetaInfo(..),
 ) where 
 
 import JSGL.Utils.Debug
+import qualified Graphics.UI.GLFW as GLFW
 import Graphics.GL.Core33
 import Graphics.GL.Types
 import Foreign.Ptr
-import System.IO(FilePath)
+import Foreign
+import System.IO (FilePath)
 import Control.Monad.Trans.State
-
-data WindowInfo = WindowInfo {
-  size :: (Int, Int),
-  title :: String,
-  resizable :: Bool,
-  fullscreen :: Bool
-}
-
-windowInfo :: WindowInfo
-windowInfo = WindowInfo {
-  size = (800, 600),
-  title = "Window",
-  resizable = False,
-  fullscreen = False
-}
 
 data AttribInfo = AttribInfo {
   attribPointer :: AttribPointer,
@@ -67,22 +51,6 @@ attribInfo = AttribInfo {
   array = []
 }
 
-class Drawable a where
-  draw :: a -> DrawType -> IO ()
-
-instance Drawable ShapeInfo where
-  draw info drawType = do
-    glBindVertexArray $ vao info
-    let points' = fromIntegral $ points info
-    if hasIndex info
-    then glDrawElements drawType points' GL_UNSIGNED_INT nullPtr
-    else glDrawArrays drawType 0 points'
-
-instance Drawable ShapeObject where
-  draw obj drawType = do
-    glUseProgram $ program obj
-    draw (shapeInfo obj) drawType
-    
 data ShapeInfo = ShapeInfo {
   hasIndex :: Bool,
   vao :: VAO,
@@ -93,6 +61,10 @@ data ShapeObject = ShapeObject {
   program :: Program,
   position :: Position,
   shapeInfo :: ShapeInfo
+}
+
+data MetaInfo = MetaInfo {
+  getWindow :: GLFW.Window
 }
 
 type Position = [GLfloat]

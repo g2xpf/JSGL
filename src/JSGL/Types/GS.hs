@@ -24,8 +24,6 @@ import Graphics.GL.Types
 type GS s a = CState s GLFW.Window IO a
 runGS :: GS s a -> (WindowInfo, s) -> IO (a, s)
 runGS gs (windowInfo, initState) = do
-  let interval = 1000000 `div` fps windowInfo
-
   glfwBracket $ do
     window <- initWindow windowInfo
     GLFW.setKeyCallback window (Just callback)
@@ -35,9 +33,7 @@ runGS gs (windowInfo, initState) = do
     runCState gs (window, initState)
 
 runGS_ :: GS s a -> (WindowInfo, s) -> IO ()
-runGS_ gs init = do
-  runGS gs init
-  return ()
+runGS_ gs init = runGS gs init >> return ()
 
 glfwBracket :: IO a -> IO a
 glfwBracket action = do
